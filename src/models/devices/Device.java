@@ -2,21 +2,29 @@ package models.devices;
 
 public interface Device {
 
-    String getId();
+    int getId();
 
     void setName(String name);
 
     void setLocation(String location);
 
+    void setId(int id);
+
     boolean isOn();
 
-    void turnOn();
-
-    void turnOff();
+    void setIsOn(boolean isOn);
 
     String getIpAddress();
 
     void setIpAddress(String ipAddress);
+
+    String getName();
+
+    String getData();
+
+    void setData(String data);
+
+    String getLocation();
 
     void save();
 

@@ -1,32 +1,24 @@
 package models.devices;
 
-import threads.LoggingThread;
 import utils.DeviceManager;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BasicDevice implements Device {
 
-    protected String id;
+    protected int id;
     protected String name;
     protected String ipAddress;
     protected String location;
+    protected String data;
     protected boolean on;
     protected volatile AtomicBoolean lock;
 
-    protected BasicDevice() {
+    public BasicDevice() {
         lock = new AtomicBoolean(false);
-        // Needed for Jackson's JSON Serializing
     }
 
-    protected BasicDevice(String ipAddress) {
-        lock = new AtomicBoolean(false);
-        this.ipAddress = ipAddress;
-        id = UUID.randomUUID().toString();
-    }
-
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -38,18 +30,16 @@ public class BasicDevice implements Device {
         this.location = location;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public boolean isOn() {
         return on;
     }
 
-    public void turnOn() {
-        this.on = true;
-        save();
-    }
-
-    public void turnOff() {
-        this.on = false;
-        save();
+    public void setIsOn(boolean isOn) {
+        this.on = isOn;
     }
 
     public String getIpAddress() {
@@ -60,17 +50,39 @@ public class BasicDevice implements Device {
         this.ipAddress = ipAddress;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
     public void save() {
         while (lock.get()) {
             Thread.yield();
         }
         lock.set(true);
-        try {
-            DeviceManager.getInstance().saveDevice(this);
-        } catch (DeviceManager.DeviceNotSavedException e) {
-            LoggingThread.logError("Cannot save Device with ID '" + id + "': " + e.getMessage());
-        }
+        DeviceManager.getInstance().saveDevice(this);
         lock.set(false);
     }
 
+    public String toString() {
+        return this.getClass().getCanonicalName() + "{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", ipAddress='" + ipAddress + '\'' +
+                ", location='" + location + '\'' +
+                ", data='" + data + '\'' +
+                ", on=" + on +
+                '}';
+    }
 }

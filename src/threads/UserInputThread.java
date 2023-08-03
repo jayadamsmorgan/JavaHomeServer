@@ -4,6 +4,7 @@ import models.devices.Device;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.SharedState;
+import utils.SignalConverter;
 
 import java.util.Scanner;
 
@@ -24,7 +25,7 @@ public class UserInputThread implements Runnable {
             try {
                 String commandPrefix = fullCommand.split(" ")[0];
                 switch (commandPrefix) {
-                    case "SWITCH" -> {
+                    case "SWITCH", "S" -> {
                         String[] commandSuffix = fullCommand.split(" ")[1].split("=");
                         switch (commandSuffix[0]) {
                             case "ALL" -> {
@@ -32,13 +33,17 @@ public class UserInputThread implements Runnable {
                                     case "OFF" -> {
                                         LoggingThread.log("Console: Turning all devices off.");
                                         for (Device device : SharedState.devices) {
-                                            device.turnOff();
+                                            device.setIsOn(false);
+                                            SharedState.deviceOutputSignals
+                                                    .add(SignalConverter.deviceOutputSignal(device));
                                         }
                                     }
                                     case "ON" -> {
                                         LoggingThread.log("Console: Turning all devices on.");
                                         for (Device device : SharedState.devices) {
-                                            device.turnOn();
+                                            device.setIsOn(true);
+                                            SharedState.deviceOutputSignals
+                                                    .add(SignalConverter.deviceOutputSignal(device));
                                         }
                                     }
                                     default -> wrongCommand();
@@ -86,7 +91,7 @@ public class UserInputThread implements Runnable {
                             default -> wrongCommand();
                         }
                     }
-                    case "DEVLIST", "LIST" -> {
+                    case "LIST", "L" -> {
                         if (SharedState.devices.size() != 0) {
                             for (Device device : SharedState.devices) {
                                 System.out.println(device.toString());
@@ -96,8 +101,9 @@ public class UserInputThread implements Runnable {
                         }
                     }
                     case "HELP", "?" -> System.out.println("""
-                        DEVLIST - lists all connected devices
-                        SWITCH - turns on/off device
+                        CONFIG (CFG) [ IP / ID ] { NAME / LOCATION / ADDRESS }      - Change Device configuration
+                        LIST (L)                                                    - List all connected Devices
+                        SWITCH (S) [ ALL={OFF/ON} / IP / ID ]                       - Turn Device on/off
                         """);
                     default -> wrongCommand();
                 }
@@ -108,18 +114,24 @@ public class UserInputThread implements Runnable {
     }
 
     private void switchDeviceState(@NotNull Device device) {
+        device.setIsOn(!device.isOn());
         if (device.isOn()) {
-            LoggingThread.log("Console: Turning off device with IP '" + device.getIpAddress() + "'.");
-            device.turnOff();
-        } else {
             LoggingThread.log("Console: Turning on device with IP '" + device.getIpAddress() + "'.");
-            device.turnOn();
+        } else {
+            LoggingThread.log("Console: Turning off device with IP '" + device.getIpAddress() + "'.");
         }
+        SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
     }
 
     private @Nullable Device findDeviceById(String id) {
+        int intId;
+        try {
+            intId = Integer.parseInt(id);
+        } catch (NumberFormatException e) {
+            return null;
+        }
         for (Device device : SharedState.devices) {
-            if (device.getId().equalsIgnoreCase(id)) {
+            if (device.getId() == intId) {
                 return device;
             }
         }
@@ -171,6 +183,7 @@ public class UserInputThread implements Runnable {
         if (location != null) {
             device.setLocation(location);
         }
+        device.save();
     }
 
     private void wrongCommand() {

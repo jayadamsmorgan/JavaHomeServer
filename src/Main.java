@@ -1,10 +1,10 @@
 import threads.*;
-import utils.DeviceManager;
+import utils.DBUtil;
 import utils.SharedState;
 
 public class Main {
 
-    private static final String version = "0.23";
+    private static final String version = "0.44";
 
     private static boolean isVerboseEnabled = false;
     private static boolean isLoggingEnabled = false;
@@ -20,6 +20,7 @@ public class Main {
         threadsInit();
 
         System.out.println("Home server started.");
+
     }
 
     private static void welcomeLines() {
@@ -50,21 +51,21 @@ public class Main {
                     isLoggingEnabled = true;
                     System.out.println("File logging enabled.");
                 }
+                default -> {
+                    System.err.println("Wrong argument: " + arg);
+                    System.exit(0);
+                }
             }
         }
     }
 
     private static void loadDevices() {
         System.out.print("Loading Devices... ");
-        try {
-            SharedState.devices.addAll(DeviceManager.getInstance().loadDevices());
-        } catch (DeviceManager.DeviceNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        SharedState.devices.addAll(DBUtil.getInstance().loadDevices());
         if (SharedState.devices.isEmpty()) {
             System.out.println("No devices available yet.");
         } else {
-            System.out.println("Done");
+            System.out.println("Done. Device count: " + SharedState.devices.size() + ".");
         }
     }
 
@@ -82,20 +83,20 @@ public class Main {
         packetReceiveThread.start();
         System.out.print(".");
 
-        ControllingDeviceOutputThread controllingDeviceOutputThreadRunnable = new ControllingDeviceOutputThread();
-        Thread controllingDeviceOutputThread = new Thread(controllingDeviceOutputThreadRunnable);
-        controllingDeviceOutputThread.start();
-        ControllingDeviceInputThread controllingDeviceInputThreadRunnable = new ControllingDeviceInputThread();
-        Thread controllingDeviceInputThread = new Thread(controllingDeviceInputThreadRunnable);
-        controllingDeviceInputThread.start();
-        System.out.print(".");
-
         DeviceInputThread deviceInputThreadRunnable = new DeviceInputThread();
         Thread deviceInputThread = new Thread(deviceInputThreadRunnable);
         deviceInputThread.start();
         DeviceOutputThread deviceOutputThreadRunnable = new DeviceOutputThread();
-        Thread deviceControllerThread = new Thread(deviceOutputThreadRunnable);
-        deviceControllerThread.start();
+        Thread deviceOutputThread = new Thread(deviceOutputThreadRunnable);
+        deviceOutputThread.start();
+        System.out.print(".");
+
+        ControllingDeviceInputGetThread controllingDeviceInputGetThreadRunnable = new ControllingDeviceInputGetThread();
+        Thread controllingDeviceInputGetThread = new Thread(controllingDeviceInputGetThreadRunnable);
+        controllingDeviceInputGetThread.start();
+        ControllingDeviceInputOutThread controllingDeviceInputOutThreadRunnable = new ControllingDeviceInputOutThread();
+        Thread controllingDeviceInputOutThread = new Thread(controllingDeviceInputOutThreadRunnable);
+        controllingDeviceInputOutThread.start();
         System.out.print(".");
 
         System.out.println(" Done.");

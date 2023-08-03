@@ -2,4 +2,4 @@ package models.signals.device.io;
 
 import models.devices.Device;
 
-public record DeviceInputSignal(Device sourceDevice, byte[] payload) { }
+public record DeviceInputSignal(Device inputDevice, Device deviceToBeUpdated) { }

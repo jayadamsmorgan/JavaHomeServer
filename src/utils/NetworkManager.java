@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 public class NetworkManager {
 
     private static final int PORT = 8080;
-    public static final int RECEIVE_PACKET_MAX_LENGTH = 100;
+    public static final int RECEIVE_PACKET_MAX_LENGTH = 200;
 
     private static NetworkManager instance;
     private final DatagramSocket socket;

@@ -15,8 +15,11 @@ public class PacketReceiveThread implements Runnable {
             if (inputSignal.getDeviceInputSignal() != null) {
                 SharedState.deviceInputSignals.add(inputSignal.getDeviceInputSignal());
             }
-            if (inputSignal.getControllingDeviceInputSignal() != null) {
-                SharedState.controllingDeviceInputSignals.add(inputSignal.getControllingDeviceInputSignal());
+            if (inputSignal.getControllingDeviceInputOutSignal() != null) {
+                SharedState.controllingDeviceInputOutSignals.add(inputSignal.getControllingDeviceInputOutSignal());
+            }
+            if (inputSignal.getControllingDeviceInputGetSignal() != null) {
+                SharedState.controllingDeviceInputGetSignals.add(inputSignal.getControllingDeviceInputGetSignal());
             }
         }
     }
