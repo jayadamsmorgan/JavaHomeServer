@@ -89,11 +89,13 @@ public class SignalConverter {
                 if (sourceDevice == null) {
                     return;
                 }
-                LoggingThread.log("Searching for device with ID '" + sourceDevice.getId() + "'...");
+                sourceDevice.setIpAddress(address);
+                LoggingThread.log("Searching for device...");
                 Device foundDevice = DBUtil.getInstance().findDeviceByIpAddress(address);
                 if (foundDevice != null) {
                     LoggingThread.log("Device found, updating...");
                     foundDevice.setIpAddress(address);
+                    sourceDevice.setId(foundDevice.getId());
                     deviceInputSignal = new DeviceInputSignal(sourceDevice, foundDevice);
                     return;
                 }
@@ -101,7 +103,6 @@ public class SignalConverter {
                 if (foundDevice != null) {
                     LoggingThread.log("Device found (it's address has been changed), updating...");
                     foundDevice.setIpAddress(address);
-                    foundDevice.save();
                     deviceInputSignal = new DeviceInputSignal(sourceDevice, foundDevice);
                     return;
                 }

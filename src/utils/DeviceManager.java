@@ -42,7 +42,7 @@ public class DeviceManager {
             payloadString = payloadString.substring(className.length() + 1);
             return DeviceSerializer.deserialize(payloadString, deviceClass);
         } catch (Exception e) {
-            LoggingThread.log("Cannot deserialize Device from payload: " + e.getMessage());
+            LoggingThread.logError(e.getMessage());
         }
         return null;
     }

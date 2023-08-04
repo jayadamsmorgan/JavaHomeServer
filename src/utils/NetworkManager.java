@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 public class NetworkManager {
 
     private static final int PORT = 8080;
-    public static final int RECEIVE_PACKET_MAX_LENGTH = 200;
+    public static final int RECEIVE_PACKET_MAX_LENGTH = 1024;
 
     private static NetworkManager instance;
     private final DatagramSocket socket;
@@ -51,6 +51,7 @@ public class NetworkManager {
     public DatagramPacket receivePacket() {
         byte[] buffer = new byte[RECEIVE_PACKET_MAX_LENGTH];
         DatagramPacket datagramPacket = new DatagramPacket(buffer, RECEIVE_PACKET_MAX_LENGTH);
+        datagramPacket.setLength(RECEIVE_PACKET_MAX_LENGTH);
         try {
             socket.receive(datagramPacket);
             LoggingThread.log("Received packet from '" + datagramPacket.getAddress().getHostAddress() + "'.");

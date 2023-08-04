@@ -130,9 +130,10 @@ public class DBUtil {
             queryStatement.setString(1, device.getIpAddress());
             ResultSet resultSet = queryStatement.executeQuery();
             device.setId(resultSet.getInt("id"));
+            LoggingThread.log("New Device with ID '" + device.getId() + "' registered successfully.");
         } catch (SQLException e) {
             LoggingThread.logError("FATAL: Cannot save Device in the database: " + e.getMessage());
-            throw new RuntimeException(e);
+            System.exit(69);
         }
     }
 
@@ -153,9 +154,11 @@ public class DBUtil {
             statement.setBoolean(4, device.isOn());
             statement.setString(5, device.getData());
             statement.setInt(6, device.getId());
+            statement.executeUpdate();
+            LoggingThread.log("Device with ID '" + device.getId() + "' updated successfully.");
         } catch (SQLException e) {
             LoggingThread.logError("FATAL: Cannot update Device in the database: " + e.getMessage());
-            throw new RuntimeException(e);
+            System.exit(69);
         }
     }
 
@@ -180,7 +183,7 @@ public class DBUtil {
             }
         } catch (Exception e) {
             LoggingThread.logError("FATAL: Cannot load Devices from database: " + e.getMessage());
-            throw new RuntimeException(e);
+            System.exit(69);
         }
         return devices;
     }
