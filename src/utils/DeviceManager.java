@@ -47,6 +47,15 @@ public class DeviceManager {
         return null;
     }
 
+    public @NotNull String serializeDevice(@NotNull Device device) {
+        try {
+            return DeviceSerializer.serialize(device);
+        } catch (DeviceSerializer.DeviceSerializationException e) {
+            LoggingThread.logError(e.getMessage());
+        }
+        return "";
+    }
+
     private static class DeviceSerializer {
 
         private static final ObjectMapper mapper = new ObjectMapper();

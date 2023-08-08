@@ -76,13 +76,6 @@ public class BasicDevice implements Device {
     }
 
     public String toString() {
-        return this.getClass().getCanonicalName() + "{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", ipAddress='" + ipAddress + '\'' +
-                ", location='" + location + '\'' +
-                ", data='" + data + '\'' +
-                ", on=" + on +
-                '}';
+        return DeviceManager.getInstance().serializeDevice(this);
     }
 }

@@ -4,7 +4,7 @@ import utils.SharedState;
 
 public class Main {
 
-    private static final String version = "0.44";
+    private static final String version = "0.5";
 
     private static boolean isVerboseEnabled = false;
     private static boolean isLoggingEnabled = false;
