@@ -3,6 +3,7 @@ package threads;
 import models.devices.Device;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import sun.misc.Signal;
 import utils.SharedState;
 import utils.SignalConverter;
 
@@ -25,6 +26,7 @@ public class UserInputThread implements Runnable {
             try {
                 String commandPrefix = fullCommand.split(" ")[0];
                 switch (commandPrefix) {
+
                     case "SWITCH", "S" -> {
                         String[] commandSuffix = fullCommand.split(" ")[1].split("=");
                         switch (commandSuffix[0]) {
@@ -68,6 +70,7 @@ public class UserInputThread implements Runnable {
                             default -> wrongCommand();
                         }
                     }
+
                     case "CONFIG", "CFG" -> {
                         String[] params = fullCommand.split(" ");
                         String[] commandSuffix = params[1].split("=");
@@ -91,7 +94,9 @@ public class UserInputThread implements Runnable {
                             default -> wrongCommand();
                         }
                     }
+
                     case "LIST", "L" -> {
+                        LoggingThread.log("Console: Accessed a list of devices.");
                         if (SharedState.devices.size() != 0) {
                             for (Device device : SharedState.devices) {
                                 System.out.println(device.toString());
@@ -100,11 +105,20 @@ public class UserInputThread implements Runnable {
                             System.out.println("No devices available.");
                         }
                     }
-                    case "HELP", "?" -> System.out.println("""
+
+                    case "EXIT", "X" -> {
+                        LoggingThread.log("Console: Shutting down Smart Home Server.");
+                        Signal.raise(new Signal("INT"));
+                    }
+
+                    case "HELP", "?" ->
+                            System.out.println("""
                         CONFIG (CFG) [ IP / ID ] { NAME / LOCATION / ADDRESS }      - Change Device configuration
                         LIST (L)                                                    - List all connected Devices
                         SWITCH (S) [ ALL={OFF/ON} / IP / ID ]                       - Turn Device on/off
+                        EXIT (X)                                                    - Exit Home Server
                         """);
+
                     default -> wrongCommand();
                 }
             } catch (IndexOutOfBoundsException e) {

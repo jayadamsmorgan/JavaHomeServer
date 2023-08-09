@@ -1,10 +1,12 @@
+import org.jetbrains.annotations.NotNull;
+import sun.misc.Signal;
 import threads.*;
 import utils.DBUtil;
 import utils.SharedState;
 
 public class Main {
 
-    private static final String version = "0.5";
+    private static final String version = "0.55";
 
     private static boolean isVerboseEnabled = false;
     private static boolean isLoggingEnabled = false;
@@ -19,7 +21,7 @@ public class Main {
 
         threadsInit();
 
-        System.out.println("Home server started.");
+        LoggingThread.log("Home server started.");
 
     }
 
@@ -72,34 +74,49 @@ public class Main {
     private static void threadsInit() {
         System.out.print("Initializing threads");
 
-        LoggingThread loggingThreadRunnable = new LoggingThread(isVerboseEnabled, isLoggingEnabled);
-        Thread loggingThread = new Thread(loggingThreadRunnable);
-        loggingThread.start();
-        UserInputThread userInputThreadRunnable = new UserInputThread();
-        Thread userInputThread = new Thread(userInputThreadRunnable);
-        userInputThread.start();
-        PacketReceiveThread packetReceiveThreadRunnable = new PacketReceiveThread();
-        Thread packetReceiveThread = new Thread(packetReceiveThreadRunnable);
-        packetReceiveThread.start();
+        startNewThread(new LoggingThread(isVerboseEnabled, isLoggingEnabled));
+        startNewThread(new UserInputThread());
+        Thread packetReceiveThread = startNewThread(new PacketReceiveThread());
         System.out.print(".");
 
-        DeviceInputThread deviceInputThreadRunnable = new DeviceInputThread();
-        Thread deviceInputThread = new Thread(deviceInputThreadRunnable);
-        deviceInputThread.start();
-        DeviceOutputThread deviceOutputThreadRunnable = new DeviceOutputThread();
-        Thread deviceOutputThread = new Thread(deviceOutputThreadRunnable);
-        deviceOutputThread.start();
+        startNewThread(new DeviceInputThread());
+        startNewThread(new DeviceOutputThread());
         System.out.print(".");
 
-        ControllingDeviceInputGetThread controllingDeviceInputGetThreadRunnable = new ControllingDeviceInputGetThread();
-        Thread controllingDeviceInputGetThread = new Thread(controllingDeviceInputGetThreadRunnable);
-        controllingDeviceInputGetThread.start();
-        ControllingDeviceInputOutThread controllingDeviceInputOutThreadRunnable = new ControllingDeviceInputOutThread();
-        Thread controllingDeviceInputOutThread = new Thread(controllingDeviceInputOutThreadRunnable);
-        controllingDeviceInputOutThread.start();
+        startNewThread(new ControllingDeviceInputGetThread());
+        startNewThread(new ControllingDeviceInputOutThread());
         System.out.print(".");
 
         System.out.println(" Done.");
+
+        // Shutdown Signal handling
+        Signal.handle(new Signal("INT"), sig -> {
+            LoggingThread.logWarning("Shutting down Smart Home Server...");
+            packetReceiveThread.interrupt();
+            LoggingThread.log("Packet receive thread stopped. Waiting for queues to clear...");
+            // It's safe to exit if there is nothing in Signal queues.
+            while (!SharedState.deviceOutputSignals.isEmpty()
+                    || !SharedState.deviceInputSignals.isEmpty()
+                    || !SharedState.controllingDeviceInputGetSignals.isEmpty()
+                    || !SharedState.controllingDeviceInputOutSignals.isEmpty()) {
+                Thread.yield();
+            }
+            LoggingThread.log("Queues cleared. Shutdown completed.");
+            synchronized (Thread.currentThread()) {
+                try {
+                    Thread.currentThread().wait(100);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            System.exit(0);
+        });
+    }
+
+    private static @NotNull Thread startNewThread(Runnable runnable) {
+        Thread newThread = new Thread(runnable);
+        newThread.start();
+        return newThread;
     }
 
 }
