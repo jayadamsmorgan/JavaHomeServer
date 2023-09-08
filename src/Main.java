@@ -1,3 +1,4 @@
+import org.apache.commons.cli.*;
 import org.jetbrains.annotations.NotNull;
 import sun.misc.Signal;
 import threads.*;
@@ -15,7 +16,7 @@ public class Main {
 
         welcomeLines();
 
-        argumentsInit(args);
+        parseArguments(args);
 
         loadDevices();
 
@@ -39,25 +40,53 @@ public class Main {
         System.out.println(LoggingThread.ANSI_GREEN + "Java Smart Home Server v" + version + LoggingThread.ANSI_RESET);
     }
 
-    private static void argumentsInit(String[] args) {
-        if (args == null) {
-            return;
-        }
-        for (String arg : args) {
-            switch (arg) {
-                case "-v", "-verbose" -> {
-                    isVerboseEnabled = true;
-                    System.out.println("Verbose logging enabled.");
-                }
-                case "-l", "-log", "logging" -> {
-                    isLoggingEnabled = true;
-                    System.out.println("File logging enabled.");
-                }
-                default -> {
-                    System.err.println("Wrong argument: " + arg);
-                    System.exit(0);
-                }
+    private static void parseArguments(String[] args) {
+        Option verbose = Option.builder("v")
+                .hasArg(false)
+                .longOpt("verbose")
+                .desc("Enable verbose output.")
+                .required(false)
+                .build();
+        Option logging = Option.builder("l")
+                .hasArg(false)
+                .longOpt("logging")
+                .desc("Enable logging. Generates 'log.txt'.")
+                .required(false)
+                .build();
+        Option help = Option.builder("h")
+                .hasArg(false)
+                .longOpt("help")
+                .desc("Display help menu.")
+                .required(false)
+                .build();
+
+        Options options = new Options();
+        options.addOption(verbose);
+        options.addOption(logging);
+        options.addOption(help);
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter helpFormatter = new HelpFormatter();
+        try {
+            CommandLine cmd = parser.parse(options, args);
+            if (cmd.hasOption("v")) {
+                System.out.println("Verbose output enabled.");
+                isVerboseEnabled = true;
             }
+
+            if (cmd.hasOption("l")) {
+                System.out.println("Logging enabled.");
+                isLoggingEnabled = true;
+            }
+
+            if (cmd.hasOption("h")) {
+                helpFormatter.printHelp("javahomeserver.jar [-v] [-l]", options);
+                System.exit(0);
+            }
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            helpFormatter.printHelp("javahomeserver.jar [-v] [-l]", options);
+            System.exit(0);
         }
     }
 
