@@ -2,11 +2,14 @@ package threads;
 
 import models.devices.Device;
 import org.apache.commons.cli.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.misc.Signal;
+import utils.DeviceUpdate;
 import utils.SharedState;
 import utils.SignalConverter;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class UserInputThread implements Runnable {
@@ -117,6 +120,13 @@ public class UserInputThread implements Runnable {
                 .required(false)
                 .desc("Turn target Device(s) off.")
                 .build();
+        Option updateDeviceOption = Option.builder("u")
+                .longOpt("update")
+                .hasArg()
+                .optionalArg(true)
+                .required(false)
+                .desc("Update target Device firmware")
+                .build();
 
         OptionGroup destinationOptionGroup = new OptionGroup();
         destinationOptionGroup.addOption(ipOption);
@@ -128,6 +138,7 @@ public class UserInputThread implements Runnable {
         actionOptionGroup.addOption(changeLocationOption);
         actionOptionGroup.addOption(turnDeviceOnOption);
         actionOptionGroup.addOption(turnDeviceOffOption);
+        actionOptionGroup.addOption(updateDeviceOption);
 
         deviceOptions.addOptionGroup(destinationOptionGroup);
         deviceOptions.addOptionGroup(actionOptionGroup);
@@ -293,6 +304,10 @@ public class UserInputThread implements Runnable {
                 SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
                 return;
             }
+            if (cmd.hasOption("u")) {
+                updateDevice(cmd.getOptionValue("u"), targetDevice);
+                return;
+            }
 
             deviceHelpFormatter.printHelp("device [ -ip IP | -id ID | -a ] [ ACTION ]", deviceOptions);
 
@@ -336,6 +351,30 @@ public class UserInputThread implements Runnable {
 
             System.out.println("Unknown command: " + commandAndArgs[0] + ". Print 'help' or '?' for available commands");
         }
+    }
+
+    private void updateDevice(String optionValue, @NotNull Device targetDevice) {
+        LoggingThread.log("Console: Starting Device Update for Device with ID '" + targetDevice.getId() + "'.");
+        String folderPath = System.getProperty("user.dir")
+                + "/tools/firmware/" + targetDevice.getClass().getSimpleName();
+        String filePath;
+        if (optionValue == null
+                || optionValue.equals("")
+                || optionValue.equalsIgnoreCase("latest")) {
+            filePath = folderPath + "/0.2.5.bin";
+        } else {
+            filePath = folderPath + "/" + optionValue + ".bin";
+        }
+        File updateFile = new File(filePath);
+        if (!updateFile.exists()) {
+            System.out.println("Could not find update file version '" + optionValue + "'.\n" +
+                    "Try refreshing firmware packages.");
+        }
+        Runnable updateThreadRunnable = () -> {
+            DeviceUpdate.sendUpdate(updateFile, targetDevice);
+        };
+        Thread updateThread = new Thread(updateThreadRunnable);
+        updateThread.start();
     }
 
     private @Nullable Device findDeviceById(String id) {
