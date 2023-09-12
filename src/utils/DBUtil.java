@@ -51,6 +51,20 @@ public class DBUtil {
         }
     }
 
+    public void deleteDeviceById(int id) {
+        String sql = """
+                DELETE FROM devices
+                WHERE id = ?
+                """;
+        try (Connection connection = DriverManager.getConnection(DEVICE_DATABASE_FILENAME);
+        PreparedStatement queryStatement = connection.prepareStatement(sql)) {
+            queryStatement.setInt(1, id);
+            queryStatement.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public @Nullable Device findDeviceById(int id) {
         String sql = """
                 SELECT name, location, ipAddress, isOn, data, type FROM devices WHERE id = ?;
