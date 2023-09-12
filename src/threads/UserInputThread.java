@@ -498,7 +498,7 @@ public class UserInputThread implements Runnable {
         if (optionValue == null
                 || optionValue.equals("")
                 || optionValue.equalsIgnoreCase("latest")) {
-            filePath = folderPath + "/0.2.5.bin";
+            filePath = folderPath + "/latest.bin";
         } else {
             filePath = folderPath + "/" + optionValue + ".bin";
         }
