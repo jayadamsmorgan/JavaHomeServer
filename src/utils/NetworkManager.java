@@ -3,16 +3,13 @@ package utils;
 import threads.LoggingThread;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class NetworkManager {
 
-    private static final int PORT = 8080;
+    private static final int PORT = 5051;
     public static final int RECEIVE_PACKET_MAX_LENGTH = 1024;
 
     private static NetworkManager instance;

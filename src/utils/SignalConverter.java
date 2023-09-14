@@ -16,9 +16,9 @@ import java.nio.charset.StandardCharsets;
 
 public class SignalConverter {
 
-    private static final byte DEVICE_INPUT_PACKET_WELCOME_BYTE = 0x32;
+    private static final byte DEVICE_INPUT_PACKET_WELCOME_BYTE = 0x50;
 
-    private static final byte DEVICE_OUTPUT_PACKET_SIGNAL_BYTE = 0x47;
+    private static final byte DEVICE_OUTPUT_PACKET_SIGNAL_BYTE = 0x51;
 
     private static final byte CONTROLLING_DEVICE_INPUT_PACKET_GOING_THROUGH = 0x47;
     private static final byte CONTROLLING_DEVICE_INPUT_PACKET_GET_ALL_DEVICE_INFO = 0x48;

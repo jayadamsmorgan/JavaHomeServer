@@ -279,11 +279,9 @@ public class UserInputThread implements Runnable {
             if (cmd.hasOption("n")) {
                 String[] values = cmd.getOptionValues("n");
                 if (values == null) {
-                    System.out.println("null");
                     deviceHelpFormatter.printHelp("device -n NAME,LOCATION,IP,DATA,TYPE", deviceOptions);
                     return;
                 }
-                System.out.println(values.length);
                 if (values.length != 5) {
                     deviceHelpFormatter.printHelp("device -n NAME,LOCATION,IP,DATA,TYPE", deviceOptions);
                     return;

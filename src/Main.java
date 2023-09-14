@@ -29,12 +29,12 @@ public class Main {
     private static void welcomeLines() {
         String welcomeString = """
                     
-                    __  ______  __  _________   _____ __________ _    ____________\s
-                   / / / / __ \\/  |/  / ____/  / ___// ____/ __ \\ |  / / ____/ __ \\
-                  / /_/ / / / / /|_/ / __/     \\__ \\/ __/ / /_/ / | / / __/ / /_/ /
-                 / __  / /_/ / /  / / /___    ___/ / /___/ _, _/| |/ / /___/ _, _/\s
-                /_/ /_/\\____/_/  /_/_____/   /____/_____/_/ |_| |___/_____/_/ |_| \s
-                                                                                  \s
+                        __  ______  __  _________   _____ __________ _    ____________\s
+                       / / / / __ \\/  |/  / ____/  / ___// ____/ __ \\ |  / / ____/ __ \\
+                      / /_/ / / / / /|_/ / __/     \\__ \\/ __/ / /_/ / | / / __/ / /_/ /
+                     / __  / /_/ / /  / / /___    ___/ / /___/ _, _/| |/ / /___/ _, _/\s
+                    /_/ /_/\\____/_/  /_/_____/   /____/_____/_/ |_| |___/_____/_/ |_| \s
+                                                                                      \s
                 """;
         System.out.println(LoggingThread.ANSI_PURPLE + welcomeString + LoggingThread.ANSI_RESET);
         System.out.println(LoggingThread.ANSI_GREEN + "Java Smart Home Server v" + version + LoggingThread.ANSI_RESET);
