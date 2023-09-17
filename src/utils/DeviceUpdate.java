@@ -47,7 +47,7 @@ public class DeviceUpdate {
                     try {
                         udpSocket.receive(incomingPacket);
                         data = new String(incomingPacket.getData(), StandardCharsets.UTF_8);
-                        if (!data.equalsIgnoreCase("OK")) {
+                        if (!data.startsWith("OK")) {
                             if (data.startsWith("AUTH")) {
                                 // DO NOT ask me about the following...
                                 // That is the AUTH algorithm for Arduino BasicOTA... ;)

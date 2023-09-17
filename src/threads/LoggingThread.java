@@ -40,6 +40,17 @@ public class LoggingThread implements Runnable {
         }
     }
 
+    public static void clearLog() {
+        try (PrintStream logPrintStream = new PrintStream(
+                new FileOutputStream("log.txt"))) {
+            logPrintStream.println();
+            logPrintStream.flush();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        log("Console: 'log.txt' cleared.");
+    }
+
     public static void logError(String message) {
         loggingQueue.add("E" + message);
     }
@@ -49,9 +60,7 @@ public class LoggingThread implements Runnable {
     }
 
     public static void log(String message) {
-        if (isVerboseEnabled) {
-            loggingQueue.add("M" + message);
-        }
+        loggingQueue.add("M" + message);
     }
 
     private static @NotNull String getCurrentDateAndTime() {
@@ -78,7 +87,9 @@ public class LoggingThread implements Runnable {
                     textMessage = consoleMessage;
                 }
                 if (!textMessage.equals("")) {
-                    System.out.println(textMessage);
+                    if (isVerboseEnabled) {
+                        System.out.println(textMessage);
+                    }
                     if (isLoggingEnabled) {
                         try (PrintStream logPrintStream = new PrintStream(
                                 new FileOutputStream("log.txt", true))) {

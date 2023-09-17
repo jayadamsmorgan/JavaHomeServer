@@ -98,6 +98,12 @@ public class UserInputThread implements Runnable {
                 .desc("Set all Devices as targets.")
                 .build();
 
+        Option deviceInfoOption = Option.builder("i")
+                .longOpt("info")
+                .hasArg(false)
+                .required(false)
+                .desc("Show target Device info.")
+                .build();
         Option changeNameOption = Option.builder("nm")
                 .longOpt("name")
                 .hasArg()
@@ -187,6 +193,7 @@ public class UserInputThread implements Runnable {
         actionOptionGroup.addOption(updateDeviceOption);
         actionOptionGroup.addOption(deleteDeviceOption);
         actionOptionGroup.addOption(changeDeviceDataOption);
+        actionOptionGroup.addOption(deviceInfoOption);
 
         deviceOptions.addOptionGroup(destinationOptionGroup);
         deviceOptions.addOptionGroup(actionOptionGroup);
@@ -216,7 +223,7 @@ public class UserInputThread implements Runnable {
 
             if (cmd.hasOption("r")) {
                 // TODO: 9/7/23 server restart realization
-                LoggingThread.log("Console: Restarting Smart Home Server.");
+                // LoggingThread.log("Console: Restarting Smart Home Server.");
                 System.out.println("Server restart is not implemented yet.");
                 return;
             }
@@ -228,16 +235,15 @@ public class UserInputThread implements Runnable {
             }
 
             if (cmd.hasOption("clear-log")) {
-                // TODO: 9/7/23 log clear realization
-                // LoggingThread.log("Console: 'log.txt' cleared.");
-                System.out.println("Clearing log.txt is not implemented yet.");
+                LoggingThread.clearLog();
                 return;
             }
 
             if (cmd.hasOption("clear-db")) {
-                // TODO: 9/7/23 database clear realization
-                // LoggingThread.log("Console: Device Database cleared.");
-                System.out.println("Clearing database is not implemented yet.");
+                for (Device device : SharedState.devices) {
+                    DBUtil.getInstance().deleteDeviceById(device.getId());
+                }
+                LoggingThread.log("Console: Device Database cleared.");
             }
         } catch (ParseException e) {
             System.out.println(e.getMessage());
@@ -321,16 +327,20 @@ public class UserInputThread implements Runnable {
                 if (cmd.hasOption("on")) {
                     LoggingThread.log("Console: Turning all Devices on.");
                     for (Device device : SharedState.devices) {
+                        boolean previousValue = device.isOn();
                         device.setIsOn(true);
                         SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
+                        device.setIsOn(previousValue);
                     }
                     return;
                 }
                 if (cmd.hasOption("off")) {
                     LoggingThread.log("Console: Turning all Devices off.");
                     for (Device device : SharedState.devices) {
+                        boolean previousValue = device.isOn();
                         device.setIsOn(false);
                         SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
+                        device.setIsOn(previousValue);
                     }
                     return;
                 }
@@ -343,8 +353,10 @@ public class UserInputThread implements Runnable {
                     }
                     LoggingThread.log("Console: Changing all Devices names to '" + newName + "'.");
                     for (Device device : SharedState.devices) {
+                        String previousValue = device.getName();
                         device.setName(newName);
                         SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
+                        device.setName(previousValue);
                     }
                     return;
                 }
@@ -357,8 +369,10 @@ public class UserInputThread implements Runnable {
                     }
                     LoggingThread.log("Console: Moving all Devices to location '" + newLocation + "'.");
                     for (Device device : SharedState.devices) {
+                        String previousValue = device.getLocation();
                         device.setLocation(newLocation);
                         SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
+                        device.setLocation(previousValue);
                     }
                     return;
                 }
@@ -397,14 +411,23 @@ public class UserInputThread implements Runnable {
             }
             if (cmd.hasOption("on")) {
                 LoggingThread.log("Console: Turning Device with ID '" + targetDevice.getId() + "' on.");
+                boolean previousValue = targetDevice.isOn();
                 targetDevice.setIsOn(true);
                 SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                targetDevice.setIsOn(previousValue);
                 return;
             }
             if (cmd.hasOption("off")) {
                 LoggingThread.log("Console: Turning Device with ID '" + targetDevice.getId() + "' off.");
-                targetDevice.setIsOn(true);
+                boolean previousValue = targetDevice.isOn();
+                targetDevice.setIsOn(false);
                 SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                targetDevice.setIsOn(previousValue);
+                return;
+            }
+            if (cmd.hasOption("i")) {
+                LoggingThread.log("Console: Getting info about device with ID '" + targetDevice.getId() + "'.");
+                System.out.println(targetDevice);
                 return;
             }
             if (cmd.hasOption("nm")) {
@@ -416,8 +439,10 @@ public class UserInputThread implements Runnable {
                 }
                 LoggingThread.log("Console: Changing Device name with ID '" + targetDevice.getId()
                                   + "' to '" + name + "'.");
+                String previousValue = targetDevice.getName();
                 targetDevice.setName(name);
                 SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                targetDevice.setName(previousValue);
                 return;
             }
             if (cmd.hasOption("loc")) {
@@ -429,8 +454,10 @@ public class UserInputThread implements Runnable {
                 }
                 LoggingThread.log("Console: Changing Device location with ID '" + cmd.getOptionValue("id")
                                   + "' to '" + newLocation + "'.");
+                String previousValue = targetDevice.getLocation();
                 targetDevice.setLocation(newLocation);
                 SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                targetDevice.setLocation(previousValue);
                 return;
             }
             if (cmd.hasOption("u")) {
