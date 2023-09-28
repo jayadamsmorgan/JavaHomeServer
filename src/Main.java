@@ -7,10 +7,12 @@ import utils.SharedState;
 
 public class Main {
 
-    private static final String version = "0.55";
+    private static final String version = "0.69";
 
-    private static boolean isVerboseEnabled = false;
-    private static boolean isLoggingEnabled = false;
+    private static boolean isConsoleLoggingEnabled = false;
+    private static boolean isFileLoggingEnabled = false;
+    private static int fileLogLevel = LoggingThread.LOG_LEVEL_ERROR;
+    private static int consoleLogLevel = LoggingThread.LOG_LEVEL_ERROR;
 
     public static void main(String[] args) {
 
@@ -41,16 +43,33 @@ public class Main {
     }
 
     private static void parseArguments(String[] args) {
-        Option verbose = Option.builder("v")
-                .hasArg(false)
-                .longOpt("verbose")
-                .desc("Enable verbose output.")
+        Option consoleLogging = Option.builder("c")
+                .hasArg()
+                .optionalArg(true)
+                .longOpt("console-log")
+                .desc("""
+                        Enable console logging.
+                        Arg: Log level:
+                        0 - NONE
+                        1 - ERROR (DEFAULT)
+                        2 - WARNING
+                        3 - VERBOSE
+                        """)
                 .required(false)
                 .build();
-        Option logging = Option.builder("l")
-                .hasArg(false)
-                .longOpt("logging")
-                .desc("Enable logging. Generates 'log.txt'.")
+        Option fileLogging = Option.builder("f")
+                .hasArg()
+                .optionalArg(true)
+                .longOpt("file-log")
+                .desc("""
+                        Enable file logging.
+                        Generates 'log.txt'.
+                        Arg: Log level:
+                        0 - NONE
+                        1 - ERROR (DEFAULT)
+                        2 - WARNING
+                        3 - VERBOSE
+                        """)
                 .required(false)
                 .build();
         Option help = Option.builder("h")
@@ -61,31 +80,83 @@ public class Main {
                 .build();
 
         Options options = new Options();
-        options.addOption(verbose);
-        options.addOption(logging);
+        options.addOption(consoleLogging);
+        options.addOption(fileLogging);
         options.addOption(help);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter helpFormatter = new HelpFormatter();
         try {
             CommandLine cmd = parser.parse(options, args);
-            if (cmd.hasOption("v")) {
-                System.out.println("Verbose output enabled.");
-                isVerboseEnabled = true;
-            }
-
-            if (cmd.hasOption("l")) {
-                System.out.println("Logging enabled.");
-                isLoggingEnabled = true;
-            }
 
             if (cmd.hasOption("h")) {
-                helpFormatter.printHelp("javahomeserver.jar [-v] [-l]", options);
+                helpFormatter.printHelp("javahomeserver.jar [-c [LOGLEVEL=1]] [-f [LOGLEVEL=1]]", options);
                 System.exit(0);
             }
+
+            if (cmd.hasOption("c")) {
+                System.out.println("Console logging enabled.");
+                isConsoleLoggingEnabled = true;
+                String logLevelString = cmd.getOptionValue("c");
+                System.out.print("Console output logging level: ");
+                if (logLevelString != null) {
+                    switch (logLevelString) {
+                        case "0", "NONE" -> {
+                            consoleLogLevel = LoggingThread.LOG_LEVEL_NONE;
+                            System.out.println(LoggingThread.ANSI_PURPLE + "NONE" + LoggingThread.ANSI_RESET + ".");
+                        }
+                        case "2", "WARNING" -> {
+                            consoleLogLevel = LoggingThread.LOG_LEVEL_WARNING;
+                            System.out.println(LoggingThread.ANSI_YELLOW + "WARNING" + LoggingThread.ANSI_RESET + ".");
+                        }
+                        case "3", "VERBOSE" -> {
+                            consoleLogLevel = LoggingThread.LOG_LEVEL_VERBOSE;
+                            System.out.println(LoggingThread.ANSI_GREEN + "VERBOSE" + LoggingThread.ANSI_RESET + ".");
+                        }
+                        default -> {
+                            consoleLogLevel = LoggingThread.LOG_LEVEL_ERROR;
+                            System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
+                        }
+                    }
+                } else {
+                    consoleLogLevel = LoggingThread.LOG_LEVEL_ERROR;
+                    System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
+                }
+            }
+
+            if (cmd.hasOption("f")) {
+                System.out.println("File logging enabled.");
+                isFileLoggingEnabled = true;
+                String logLevelString = cmd.getOptionValue("f");
+                System.out.print("File output logging level: ");
+                if (logLevelString != null) {
+                    switch (logLevelString) {
+                        case "0", "NONE" -> {
+                            fileLogLevel = LoggingThread.LOG_LEVEL_NONE;
+                            System.out.println(LoggingThread.ANSI_PURPLE + "NONE" + LoggingThread.ANSI_RESET + ".");
+                        }
+                        case "2", "WARNING" -> {
+                            fileLogLevel = LoggingThread.LOG_LEVEL_WARNING;
+                            System.out.println(LoggingThread.ANSI_YELLOW + "WARNING" + LoggingThread.ANSI_RESET + ".");
+                        }
+                        case "3", "VERBOSE" -> {
+                            fileLogLevel = LoggingThread.LOG_LEVEL_VERBOSE;
+                            System.out.println(LoggingThread.ANSI_GREEN + "VERBOSE" + LoggingThread.ANSI_RESET + ".");
+                        }
+                        default -> {
+                            fileLogLevel = LoggingThread.LOG_LEVEL_ERROR;
+                            System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
+                        }
+                    }
+                } else {
+                    fileLogLevel = LoggingThread.LOG_LEVEL_ERROR;
+                    System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
+                }
+            }
+
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            helpFormatter.printHelp("javahomeserver.jar [-v] [-l]", options);
+            helpFormatter.printHelp("javahomeserver.jar [-c [LOGLEVEL=1]] [-f [LOGLEVEL=1]]", options);
             System.exit(0);
         }
     }
@@ -103,7 +174,7 @@ public class Main {
     private static void threadsInit() {
         System.out.print("Initializing threads");
 
-        startNewThread(new LoggingThread(isVerboseEnabled, isLoggingEnabled));
+        startNewThread(new LoggingThread(isConsoleLoggingEnabled, isFileLoggingEnabled, consoleLogLevel, fileLogLevel));
         startNewThread(new UserInputThread());
         Thread packetReceiveThread = startNewThread(new PacketReceiveThread());
         System.out.print(".");

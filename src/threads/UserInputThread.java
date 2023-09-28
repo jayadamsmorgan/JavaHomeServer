@@ -8,6 +8,8 @@ import sun.misc.Signal;
 import utils.*;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,34 +106,6 @@ public class UserInputThread implements Runnable {
                 .required(false)
                 .desc("Show target Device info.")
                 .build();
-        Option changeNameOption = Option.builder("nm")
-                .longOpt("name")
-                .hasArg()
-                .required(false)
-                .desc("""
-                        Change target Device name.
-                            Usage: device [ -ip IP | -id ID ] -nm NAME
-                        """)
-                .build();
-        Option changeLocationOption = Option.builder("loc")
-                .longOpt("location")
-                .hasArg()
-                .required(false)
-                .desc("""
-                        Change target Device location.
-                            Usage: device [ -a | -ip IP | -id ID ] -loc LOCATION
-                        """)
-                .build();
-        Option changeDeviceDataOption = Option.builder()
-                .longOpt("data")
-                .hasArg()
-                .required(false)
-                .desc("""
-                        Change target Device data.
-                            Usage: device [ -a | -ip IP | -id ID ] --data DATA
-                            Default: Empty String
-                        """)
-                .build();
         Option turnDeviceOnOption = Option.builder("on")
                 .hasArg(false)
                 .required(false)
@@ -180,20 +154,29 @@ public class UserInputThread implements Runnable {
                         """)
                 .build();
 
+        Option editDeviceFieldsOption = Option.builder("f")
+                .longOpt("fields")
+                .hasArgs()
+                .valueSeparator(',')
+                .required(false)
+                .desc("""
+                        Change custom Device fields. Integer and String support only for now.
+                            Usage: device [ -id ID | -ip IP ] -f FIELD1=VALUE1,FIELD2=VALUE2,...
+                        """)
+                .build();
+
         OptionGroup destinationOptionGroup = new OptionGroup();
         destinationOptionGroup.addOption(ipOption);
         destinationOptionGroup.addOption(idOption);
         destinationOptionGroup.addOption(allOption);
 
         OptionGroup actionOptionGroup = new OptionGroup();
-        actionOptionGroup.addOption(changeNameOption);
-        actionOptionGroup.addOption(changeLocationOption);
         actionOptionGroup.addOption(turnDeviceOnOption);
         actionOptionGroup.addOption(turnDeviceOffOption);
         actionOptionGroup.addOption(updateDeviceOption);
         actionOptionGroup.addOption(deleteDeviceOption);
-        actionOptionGroup.addOption(changeDeviceDataOption);
         actionOptionGroup.addOption(deviceInfoOption);
+        actionOptionGroup.addOption(editDeviceFieldsOption);
 
         deviceOptions.addOptionGroup(destinationOptionGroup);
         deviceOptions.addOptionGroup(actionOptionGroup);
@@ -235,7 +218,7 @@ public class UserInputThread implements Runnable {
             }
 
             if (cmd.hasOption("clear-log")) {
-                LoggingThread.clearLog();
+                LoggingThread.clearLogFile();
                 return;
             }
 
@@ -344,42 +327,10 @@ public class UserInputThread implements Runnable {
                     }
                     return;
                 }
-                if (cmd.hasOption("nm")) {
-                    String newName = cmd.getOptionValue("nm");
-                    if (newName == null || newName.equals("")) {
-                        deviceHelpFormatter
-                                .printHelp("device [ -id ID | -ip IP | -a ] -nm NAME", deviceOptions);
-                        return;
-                    }
-                    LoggingThread.log("Console: Changing all Devices names to '" + newName + "'.");
-                    for (Device device : SharedState.devices) {
-                        String previousValue = device.getName();
-                        device.setName(newName);
-                        SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
-                        device.setName(previousValue);
-                    }
-                    return;
-                }
-                if (cmd.hasOption("loc")) {
-                    String newLocation = cmd.getOptionValue("loc");
-                    if (newLocation == null || newLocation.equals("")) {
-                        deviceHelpFormatter
-                                .printHelp("device [ -id ID | -ip IP | -a ] -loc LOCATION", deviceOptions);
-                        return;
-                    }
-                    LoggingThread.log("Console: Moving all Devices to location '" + newLocation + "'.");
-                    for (Device device : SharedState.devices) {
-                        String previousValue = device.getLocation();
-                        device.setLocation(newLocation);
-                        SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
-                        device.setLocation(previousValue);
-                    }
-                    return;
-                }
                 if (cmd.hasOption("u")) {
                     LoggingThread.log("Console: Updating all Devices.");
                     for (Device device : SharedState.devices) {
-                        updateDevice(cmd.getOptionValue("u"), device);
+                        updateDeviceFirmware(cmd.getOptionValue("u"), device);
                     }
                     return;
                 }
@@ -430,39 +381,9 @@ public class UserInputThread implements Runnable {
                 System.out.println(targetDevice);
                 return;
             }
-            if (cmd.hasOption("nm")) {
-                String name = cmd.getOptionValue("nm");
-                if (name == null || name.equals("")) {
-                    deviceHelpFormatter
-                            .printHelp("device [ -id ID | -ip IP | -a ] -nm NAME", deviceOptions);
-                    return;
-                }
-                LoggingThread.log("Console: Changing Device name with ID '" + targetDevice.getId()
-                                  + "' to '" + name + "'.");
-                String previousValue = targetDevice.getName();
-                targetDevice.setName(name);
-                SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
-                targetDevice.setName(previousValue);
-                return;
-            }
-            if (cmd.hasOption("loc")) {
-                String newLocation = cmd.getOptionValue("loc");
-                if (newLocation == null || newLocation.equals("")) {
-                    deviceHelpFormatter
-                            .printHelp("device [ -id ID | -ip IP | -a ] -loc LOCATION", deviceOptions);
-                    return;
-                }
-                LoggingThread.log("Console: Changing Device location with ID '" + cmd.getOptionValue("id")
-                                  + "' to '" + newLocation + "'.");
-                String previousValue = targetDevice.getLocation();
-                targetDevice.setLocation(newLocation);
-                SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
-                targetDevice.setLocation(previousValue);
-                return;
-            }
             if (cmd.hasOption("u")) {
                 LoggingThread.log("Console: Starting Device Update for Device with ID '" + targetDevice.getId() + "'.");
-                updateDevice(cmd.getOptionValue("u"), targetDevice);
+                updateDeviceFirmware(cmd.getOptionValue("u"), targetDevice);
                 return;
             }
             if (cmd.hasOption("delete")) {
@@ -470,6 +391,64 @@ public class UserInputThread implements Runnable {
                 int deviceID = targetDevice.getId();
                 SharedState.devices.removeIf(device -> device.getId() == deviceID);
                 DBUtil.getInstance().deleteDeviceById(deviceID);
+            }
+            if (cmd.hasOption("f")) {
+                String[] values = cmd.getOptionValues("f");
+                if (values == null || values.length == 0) {
+                    deviceHelpFormatter
+                            .printHelp("device [ -id ID | -ip IP ] -f FIELD1=VALUE1,FIELD2=VALUE2,...",
+                                    deviceOptions);
+                    return;
+                }
+                HashMap<Field, Object> changes = new HashMap<>();
+                for (String keyValue : values) {
+                    String[] keyAndValue = keyValue.split("=");
+                    if (keyAndValue.length != 2) {
+                        System.out.println("Wrong key-value parameter '" + keyValue + "'.");
+                        return;
+                    }
+                    try {
+                        Field field = targetDevice.getClass().getField(keyAndValue[0]);
+                        if (field.getType() == Integer.class || field.getType() == int.class) {
+                            try {
+                                int value = Integer.parseInt(keyAndValue[1]);
+                                try {
+                                    changes.put(field, field.get(targetDevice));
+                                    field.set(targetDevice, value);
+                                } catch (IllegalAccessException | IllegalArgumentException e) {
+                                    System.out.println("Cannot update field '" + field.getName()
+                                            + "': " + e.getMessage());
+                                }
+                            } catch (NumberFormatException e) {
+                                System.out.println("Cannot update field '" + field.getName()
+                                        + "': new value should be an Integer.");
+                            }
+                        } else if (field.getType() == String.class) {
+                            String value = keyAndValue[1];
+                            try {
+                                changes.put(field, field.get(targetDevice));
+                                field.set(targetDevice, value);
+                            } catch (IllegalAccessException | IllegalArgumentException e) {
+                                System.out.println("Cannot update field '" + field.getName() + "': " + e.getMessage());
+                            }
+                        } else {
+                            System.out.println("Type '" + field.getType().getSimpleName() + "' of field '"
+                                    + field.getName() + "' is not supported yet.");
+                        }
+                    } catch (NoSuchFieldException e) {
+                        System.out.println("No such field '" + keyAndValue[0] + "' was found in Device class '"
+                                + targetDevice.getClass().getSimpleName() + "'.");
+                    }
+                }
+                SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                for (Field field : changes.keySet()) {
+                    try {
+                        field.set(targetDevice, changes.get(field));
+                    } catch (IllegalAccessException e) {
+                        System.out.println("Cannot unset changes for '" + field.getName() + "'");
+                    }
+                }
+                return;
             }
 
             deviceHelpFormatter.printHelp("device [ -ip IP | -id ID | -a ] [ ACTION ]", deviceOptions);
@@ -516,7 +495,7 @@ public class UserInputThread implements Runnable {
         }
     }
 
-    private void updateDevice(String optionValue, @NotNull Device targetDevice) {
+    private void updateDeviceFirmware(String optionValue, @NotNull Device targetDevice) {
         String folderPath = System.getProperty("user.dir")
                 + "/tools/firmware/" + targetDevice.getClass().getSimpleName();
         String filePath;
