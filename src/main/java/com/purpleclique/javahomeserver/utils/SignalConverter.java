@@ -1,6 +1,7 @@
 package com.purpleclique.javahomeserver.utils;
 
 import com.purpleclique.javahomeserver.models.devices.Device;
+import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.models.io.DeviceInputSignal;
 import com.purpleclique.javahomeserver.models.io.DeviceOutputSignal;
 import com.purpleclique.javahomeserver.threads.LoggingThread;
@@ -39,7 +40,11 @@ public class SignalConverter {
             byte[] payload = packet.getData();
             String address = packet.getAddress().getHostAddress();
             if (payload[0] == DEVICE_INPUT_PACKET_WELCOME_BYTE) {
-                Device sourceDevice = DeviceManager.getInstance().deserializeFromPayload(payload);
+                DeviceDTO sourceDeviceDTO = DeviceManager.getInstance().deserializeFromPayload(payload);
+                if (sourceDeviceDTO == null) {
+                    return;
+                }
+                Device sourceDevice = sourceDeviceDTO.getDevice();
                 if (sourceDevice == null) {
                     return;
                 }

@@ -1,7 +1,7 @@
 package com.purpleclique.javahomeserver.controllers;
 
 import com.purpleclique.javahomeserver.models.auth.User;
-import com.purpleclique.javahomeserver.models.response.UserDTO;
+import com.purpleclique.javahomeserver.models.dto.UserDTO;
 import com.purpleclique.javahomeserver.utils.DBUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

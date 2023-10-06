@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.purpleclique.javahomeserver.models.devices.Device;
+import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.threads.LoggingThread;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,15 +33,10 @@ public class DeviceManager {
         }
     }
 
-    public @Nullable Device deserializeFromPayload(byte @NotNull [] payload) {
+    public @Nullable DeviceDTO deserializeFromPayload(byte @NotNull [] payload) {
         try {
-            byte[] payloadData = new byte[payload.length - 1];
-            System.arraycopy(payload, 1, payloadData, 0, payloadData.length);
-            String payloadString = new String(payloadData, StandardCharsets.UTF_8);
-            String className = payloadString.split(";")[0];
-            Class<Device> deviceClass = (Class<Device>) Class.forName("models.devices." + className);
-            payloadString = payloadString.substring(className.length() + 1);
-            return DeviceSerializer.deserialize(payloadString, deviceClass);
+            String payloadString = new String(payload, StandardCharsets.UTF_8).substring(1);
+            return DeviceSerializer.deserialize(payloadString);
         } catch (Exception e) {
             LoggingThread.logError(e.getMessage());
         }
@@ -69,9 +65,9 @@ public class DeviceManager {
             }
         }
 
-        public static Device deserialize(String serializedDevice, Class<? extends Device> valueType) throws DeviceSerializationException {
+        public static DeviceDTO deserialize(String serializedDevice) throws DeviceSerializationException {
             try {
-                return mapper.readValue(serializedDevice, valueType);
+                return mapper.readValue(serializedDevice, DeviceDTO.class);
             } catch (JsonProcessingException e) {
                 throw new DeviceSerializationException("Cannot deserialize Device: " + "\n" + e.getMessage());
             }

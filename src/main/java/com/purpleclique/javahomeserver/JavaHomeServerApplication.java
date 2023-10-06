@@ -2,26 +2,19 @@ package com.purpleclique.javahomeserver;
 
 import com.purpleclique.javahomeserver.threads.*;
 import com.purpleclique.javahomeserver.utils.DBUtil;
+import com.purpleclique.javahomeserver.utils.Properties;
 import com.purpleclique.javahomeserver.utils.SharedState;
 import lombok.NonNull;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import sun.misc.Signal;
 
 @SpringBootApplication
+@RequiredArgsConstructor
 public class JavaHomeServerApplication {
 
 	private static final String version = "0.69";
-
-	private static boolean isConsoleLoggingEnabled = true;
-	private static boolean isFileLoggingEnabled = true;
-
-	@Value("${homeserver.log_level.console}")
-	private static int consoleLogLevel;
-
-	@Value("${homeserver.log_level.file}")
-	private static int fileLogLevel;
 
 	public static void main(String[] args) {
 
@@ -29,7 +22,7 @@ public class JavaHomeServerApplication {
 
 		welcomeLines();
 
-		parseArguments();
+		parseProperties();
 
 		loadDevices();
 
@@ -53,35 +46,35 @@ public class JavaHomeServerApplication {
 		System.out.println(LoggingThread.ANSI_GREEN + "Java Smart Home Server v" + version + LoggingThread.ANSI_RESET);
 	}
 
-	private static void parseArguments() {
+	private static int parseLogLevel(@NonNull String logLevel) {
+		switch (logLevel) {
+			case "0", "NONE" -> {
+				logLevel = "0";
+				System.out.println(LoggingThread.ANSI_PURPLE + "NONE" + LoggingThread.ANSI_RESET + ".");
+			}
+			case "2", "WARNING" -> {
+				logLevel = "2";
+				System.out.println(LoggingThread.ANSI_YELLOW + "WARNING" + LoggingThread.ANSI_RESET + ".");
+			}
+			case "3", "VERBOSE" -> {
+				logLevel = "3";
+				System.out.println(LoggingThread.ANSI_GREEN + "VERBOSE" + LoggingThread.ANSI_RESET + ".");
+			}
+			default -> {
+				logLevel = "1";
+				System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
+			}
+		}
+		return Integer.parseInt(logLevel);
+	}
+
+	private static void parseProperties() {
 
 		System.out.print("Console output logging level: ");
-		switch (consoleLogLevel) {
-			case 0 -> {
-				isConsoleLoggingEnabled = false;
-				System.out.println(LoggingThread.ANSI_PURPLE + "NONE" + LoggingThread.ANSI_RESET + ".");
-			}
-			case 2 -> System.out.println(LoggingThread.ANSI_YELLOW + "WARNING" + LoggingThread.ANSI_RESET + ".");
-			case 3 -> System.out.println(LoggingThread.ANSI_GREEN + "VERBOSE" + LoggingThread.ANSI_RESET + ".");
-			default -> {
-				consoleLogLevel = 1;
-				System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
-			}
-		}
+		LoggingThread.consoleLogLevel = parseLogLevel(Properties.getConsoleLogLevel());
 
 		System.out.print("File output logging level: ");
-		switch (fileLogLevel) {
-			case 0 -> {
-				isFileLoggingEnabled = false;
-				System.out.println(LoggingThread.ANSI_PURPLE + "NONE" + LoggingThread.ANSI_RESET + ".");
-			}
-			case 2 -> System.out.println(LoggingThread.ANSI_YELLOW + "WARNING" + LoggingThread.ANSI_RESET + ".");
-			case 3 -> System.out.println(LoggingThread.ANSI_GREEN + "VERBOSE" + LoggingThread.ANSI_RESET + ".");
-			default -> {
-				fileLogLevel = LoggingThread.LOG_LEVEL_ERROR;
-				System.out.println(LoggingThread.ANSI_RED + "ERROR" + LoggingThread.ANSI_RESET + ".");
-			}
-		}
+		LoggingThread.fileLogLevel = parseLogLevel(Properties.getFileLogLevel());
 	}
 
 	private static void loadDevices() {
@@ -97,7 +90,7 @@ public class JavaHomeServerApplication {
 	private static void threadsInit() {
 		System.out.print("Initializing threads");
 
-		startNewThread(new LoggingThread(isConsoleLoggingEnabled, isFileLoggingEnabled, consoleLogLevel, fileLogLevel));
+		startNewThread(new LoggingThread());
 		startNewThread(new UserInputThread());
 		Thread packetReceiveThread = startNewThread(new PacketReceiveThread());
 		System.out.print(".");

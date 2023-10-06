@@ -1,4 +1,6 @@
-package com.purpleclique.javahomeserver.models.devices.lights;
+package com.purpleclique.javahomeserver.models.devices;
+
+import com.purpleclique.javahomeserver.models.devices.LightDevice;
 
 public class RGBStrip extends LightDevice {
 

@@ -1,4 +1,4 @@
-package com.purpleclique.javahomeserver.models.response;
+package com.purpleclique.javahomeserver.models.dto;
 
 import com.purpleclique.javahomeserver.models.auth.User;
 import lombok.AllArgsConstructor;

@@ -24,29 +24,19 @@ public class LoggingThread implements Runnable {
 
     private static LinkedBlockingQueue<String> loggingQueue;
 
-    private static boolean isFileLoggingEnabled;
-    private static boolean isConsoleLoggingEnabled;
-    private static int fileLogLevel;
-    private static int consoleLogLevel;
+    public static int fileLogLevel;
+    public static int consoleLogLevel;
 
-    public LoggingThread(boolean isConsoleLoggingEnabled, boolean isFileLoggingEnabled,
-                         int consoleLogLevel, int fileLogLevel) {
+    public LoggingThread() {
         loggingQueue = new LinkedBlockingQueue<>();
-        LoggingThread.isConsoleLoggingEnabled = isConsoleLoggingEnabled;
-        LoggingThread.isFileLoggingEnabled = isFileLoggingEnabled;
-        LoggingThread.consoleLogLevel = consoleLogLevel;
-        LoggingThread.fileLogLevel = fileLogLevel;
-
-        if (isFileLoggingEnabled) {
-            try {
-                File logFile = new File("log.txt");
-                if (!logFile.exists()) {
-                    logFile.createNewFile();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new RuntimeException(e);
+        try {
+            File logFile = new File("log.txt");
+            if (!logFile.exists()) {
+                logFile.createNewFile();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -101,10 +91,10 @@ public class LoggingThread implements Runnable {
                     logLevel = LOG_LEVEL_VERBOSE;
                 }
                 if (!textMessage.equals("")) {
-                    if (isConsoleLoggingEnabled && logLevel <= consoleLogLevel) {
+                    if (logLevel <= consoleLogLevel) {
                         System.out.println(textMessage);
                     }
-                    if (isFileLoggingEnabled && logLevel <= fileLogLevel) {
+                    if (logLevel <= fileLogLevel) {
                         try (PrintStream logPrintStream = new PrintStream(
                                 new FileOutputStream("log.txt", true))) {
                             logPrintStream.println(consoleMessage);

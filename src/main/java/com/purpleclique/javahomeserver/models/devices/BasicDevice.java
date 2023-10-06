@@ -76,6 +76,7 @@ public class BasicDevice implements Device {
     }
 
     public String toString() {
-        return DeviceManager.getInstance().serializeDevice(this);
+        return "{\"deviceType\":\"" + this.getClass().getSimpleName() + "\",\"device\":"
+                + DeviceManager.getInstance().serializeDevice(this) + "}";
     }
 }

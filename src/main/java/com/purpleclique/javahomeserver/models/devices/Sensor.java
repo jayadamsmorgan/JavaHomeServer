@@ -1,4 +1,4 @@
-package com.purpleclique.javahomeserver.models.devices.sensors;
+package com.purpleclique.javahomeserver.models.devices;
 
 import com.purpleclique.javahomeserver.models.devices.BasicDevice;
 
