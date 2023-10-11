@@ -5,7 +5,6 @@ import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.utils.DBUtil;
 import com.purpleclique.javahomeserver.utils.SharedState;
-import com.purpleclique.javahomeserver.utils.SignalConverter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,7 +53,7 @@ public class DevicesController {
         if (targetDevice == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(body.getDevice()));
+        System.out.println(body.getDevice().toString());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

@@ -26,10 +26,8 @@ public class SignalConverter {
     @Contract("_ -> new")
     public static @NotNull DeviceOutputSignal deviceOutputSignal(@NotNull Device device) {
         byte[] payload = device.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] fullPayload = new byte[payload.length + 1];
-        System.arraycopy(payload, 0, fullPayload, 1, payload.length);
-        fullPayload[0] = DEVICE_OUTPUT_PACKET_WELCOME_BYTE;
-        return new DeviceOutputSignal(fullPayload, device);
+        payload[0] = DEVICE_OUTPUT_PACKET_WELCOME_BYTE;
+        return new DeviceOutputSignal(payload, device);
     }
 
     public static class InputSignal {

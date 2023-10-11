@@ -43,7 +43,10 @@ public class AuthenticationService {
         DBUtil.getInstance().saveNewUser(user);
         var jwtToken = jwtService.generateToken(user);
         saveUserToken(user, jwtToken);
+        var homeName = DBUtil.getInstance().getHomeName().orElseThrow();
         return AuthenticationResponse.builder()
+                .homeName(homeName)
+                .userID(user.getId())
                 .token(jwtToken)
                 .build();
     }
@@ -77,8 +80,9 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(user);
         saveUserToken(user, jwtToken);
         return AuthenticationResponse.builder()
-                .userId(user.getId())
+                .userID(user.getId())
                 .token(jwtToken)
+                .homeName(request.getHomeName())
                 .build();
     }
 
@@ -94,7 +98,10 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(user);
         revokeAllUserTokens(user);
         saveUserToken(user, jwtToken);
+        var homeName = DBUtil.getInstance().getHomeName().orElseThrow();
         return AuthenticationResponse.builder()
+                .userID(user.getId())
+                .homeName(homeName)
                 .token(jwtToken)
                 .build();
     }
