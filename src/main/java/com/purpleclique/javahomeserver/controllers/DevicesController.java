@@ -2,7 +2,9 @@ package com.purpleclique.javahomeserver.controllers;
 
 import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
+import com.purpleclique.javahomeserver.threads.DeviceOutputThread;
 import com.purpleclique.javahomeserver.utils.DBUtil;
+import com.purpleclique.javahomeserver.utils.SignalConverter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +41,7 @@ public class DevicesController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PostMapping("/update")
+    @PostMapping
     public ResponseEntity<HttpStatus> updateDevice(@RequestBody DeviceDTO body) {
         if (body == null || body.getDevice() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -48,7 +50,7 @@ public class DevicesController {
         if (targetDevice.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        DBUtil.getInstance().updateDevice(body.getDevice());
+        DeviceOutputThread.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(body.getDevice()));
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
