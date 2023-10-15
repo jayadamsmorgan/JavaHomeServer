@@ -4,7 +4,6 @@ import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.utils.*;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import sun.misc.Signal;
 
 import java.io.File;
@@ -223,9 +222,8 @@ public class UserInputThread implements Runnable {
             }
 
             if (cmd.hasOption("clear-db")) {
-                for (Device device : SharedState.devices) {
-                    DBUtil.getInstance().deleteDeviceById(device.getId());
-                }
+                DBUtil.getInstance().deleteAllDevices();
+                // TODO: delete other db objects
                 LoggingThread.log("Console: Device Database cleared.");
             }
         } catch (ParseException e) {
@@ -255,11 +253,12 @@ public class UserInputThread implements Runnable {
 
             if (cmd.hasOption("l")) {
                 LoggingThread.log("Console: Accessed a list of devices.");
-                if (SharedState.devices.size() == 0) {
+                var devices = DBUtil.getInstance().getAllDevices();
+                if (devices.size() == 0) {
                     System.out.println("No devices available.");
                     return;
                 }
-                for (Device device : SharedState.devices) {
+                for (Device device : devices) {
                     System.out.println(device.toString());
                 }
                 return;
@@ -296,62 +295,58 @@ public class UserInputThread implements Runnable {
                     return;
                 }
                 DeviceManager.getInstance().saveDevice(device);
-                // TODO: double check
-                device = DBUtil.getInstance().findDeviceByIpAddress(ip).orElseThrow();
-                SharedState.devices.add(device);
+                device = DBUtil.getInstance().findDeviceByIpAddress(ip).orElse(null);
                 LoggingThread.log("Console: Added new Device to the Database: " + device);
                 return;
             }
             Device targetDevice = null;
             if (cmd.hasOption("a")) {
-                if (SharedState.devices.size() == 0) {
+                var devices = DBUtil.getInstance().getAllDevices();
+                if (devices.size() == 0) {
                     System.out.println("No devices available.");
                     return;
                 }
                 if (cmd.hasOption("on")) {
                     LoggingThread.log("Console: Turning all Devices on.");
-                    for (Device device : SharedState.devices) {
+                    for (Device device : devices) {
                         boolean previousValue = device.isOn();
                         device.setIsOn(true);
-                        SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
+                        DeviceOutputThread.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
                         device.setIsOn(previousValue);
                     }
                     return;
                 }
                 if (cmd.hasOption("off")) {
                     LoggingThread.log("Console: Turning all Devices off.");
-                    for (Device device : SharedState.devices) {
+                    for (Device device : devices) {
                         boolean previousValue = device.isOn();
                         device.setIsOn(false);
-                        SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
+                        DeviceOutputThread.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(device));
                         device.setIsOn(previousValue);
                     }
                     return;
                 }
                 if (cmd.hasOption("u")) {
                     LoggingThread.log("Console: Updating all Devices.");
-                    for (Device device : SharedState.devices) {
+                    for (Device device : devices) {
                         updateDeviceFirmware(cmd.getOptionValue("u"), device);
                     }
                     return;
                 }
                 if (cmd.hasOption("delete")) {
                     LoggingThread.log("Console: Deleting all Devices from database.");
-                    for (Device device : SharedState.devices) {
-                        DBUtil.getInstance().deleteDeviceById(device.getId());
-                    }
-                    SharedState.devices.clear();
+                    DBUtil.getInstance().deleteAllDevices();
                     return;
                 }
                 return;
             } else if (cmd.hasOption("id")) {
-                targetDevice = findDeviceById(cmd.getOptionValue("id"));
+                targetDevice = DBUtil.getInstance().findDeviceById(cmd.getOptionValue("id")).orElse(null);
                 if (targetDevice == null) {
                     System.out.println("Cannot find device with ID '" + cmd.getOptionValue("id") + "'.");
                     return;
                 }
             } else if (cmd.hasOption("ip")) {
-                targetDevice = findDeviceByAddress(cmd.getOptionValue("ip"));
+                targetDevice = DBUtil.getInstance().findDeviceByIpAddress(cmd.getOptionValue("ip")).orElse(null);
                 if (targetDevice == null) {
                     System.out.println("Cannot find device with IP '" + cmd.getOptionValue("ip") + "'.");
                     return;
@@ -365,7 +360,7 @@ public class UserInputThread implements Runnable {
                 LoggingThread.log("Console: Turning Device with ID '" + targetDevice.getId() + "' on.");
                 boolean previousValue = targetDevice.isOn();
                 targetDevice.setIsOn(true);
-                SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                DeviceOutputThread.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
                 targetDevice.setIsOn(previousValue);
                 return;
             }
@@ -373,7 +368,7 @@ public class UserInputThread implements Runnable {
                 LoggingThread.log("Console: Turning Device with ID '" + targetDevice.getId() + "' off.");
                 boolean previousValue = targetDevice.isOn();
                 targetDevice.setIsOn(false);
-                SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                DeviceOutputThread.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
                 targetDevice.setIsOn(previousValue);
                 return;
             }
@@ -390,7 +385,6 @@ public class UserInputThread implements Runnable {
             if (cmd.hasOption("delete")) {
                 LoggingThread.log("Console: Deleting Device with ID '" + targetDevice.getId() + "' from Database.");
                 String deviceID = targetDevice.getId();
-                SharedState.devices.removeIf(device -> device.getId().equals(deviceID));
                 DBUtil.getInstance().deleteDeviceById(deviceID);
             }
             if (cmd.hasOption("f")) {
@@ -441,7 +435,7 @@ public class UserInputThread implements Runnable {
                                 + targetDevice.getClass().getSimpleName() + "'.");
                     }
                 }
-                SharedState.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
+                DeviceOutputThread.deviceOutputSignals.add(SignalConverter.deviceOutputSignal(targetDevice));
                 for (Field field : changes.keySet()) {
                     try {
                         field.set(targetDevice, changes.get(field));
@@ -515,24 +509,6 @@ public class UserInputThread implements Runnable {
         Runnable updateThreadRunnable = () -> DeviceUpdate.sendUpdate(updateFile, targetDevice);
         Thread updateThread = new Thread(updateThreadRunnable);
         updateThread.start();
-    }
-
-    private @Nullable Device findDeviceById(String id) {
-        for (Device device : SharedState.devices) {
-            if (device.getId().equals(id)) {
-                return device;
-            }
-        }
-        return null;
-    }
-
-    private @Nullable Device findDeviceByAddress(String address) {
-        for (Device device : SharedState.devices) {
-            if (device.getIpAddress().equalsIgnoreCase(address)) {
-                return device;
-            }
-        }
-        return null;
     }
 
 }

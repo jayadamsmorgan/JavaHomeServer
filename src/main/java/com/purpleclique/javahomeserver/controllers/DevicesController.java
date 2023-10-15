@@ -3,13 +3,11 @@ package com.purpleclique.javahomeserver.controllers;
 import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.utils.DBUtil;
-import com.purpleclique.javahomeserver.utils.SharedState;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 @RestController
@@ -19,7 +17,8 @@ public class DevicesController {
     @GetMapping
     public ResponseEntity<Set<DeviceDTO>> getAllDevices() {
         Set<DeviceDTO> result = new HashSet<>();
-        for (Device device : SharedState.devices) {
+        var devices = DBUtil.getInstance().getAllDevices();
+        for (Device device : devices) {
             result.add(DeviceDTO.builder()
                             .deviceType(device.getClass().getSimpleName())
                             .device(device)
@@ -30,30 +29,26 @@ public class DevicesController {
 
     @GetMapping("/{deviceId}")
     public ResponseEntity<DeviceDTO> getDeviceById(@PathVariable String deviceId) {
-        for (Device device : SharedState.devices) {
-            if (Objects.equals(device.getId(), deviceId)) {
-                return ResponseEntity.ok(
-                        DeviceDTO.builder()
-                                .device(device)
-                                .deviceType(device.getClass().getSimpleName())
-                        .build()
-                );
-            }
+        var device = DBUtil.getInstance().findDeviceById(deviceId);
+        if (device.isPresent()) {
+            return ResponseEntity.ok(DeviceDTO.builder()
+                    .device(device.get())
+                    .deviceType(device.getClass().getSimpleName())
+                    .build());
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PostMapping("/{deviceId}")
-    public ResponseEntity<HttpStatus> updateDevice(
-            @PathVariable String deviceId, @RequestBody DeviceDTO body) {
-        if (body == null) {
+    @PostMapping("/update")
+    public ResponseEntity<HttpStatus> updateDevice(@RequestBody DeviceDTO body) {
+        if (body == null || body.getDevice() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        var targetDevice = DBUtil.getInstance().findDeviceById(deviceId);
+        var targetDevice = DBUtil.getInstance().findDeviceById(body.getDevice().getId());
         if (targetDevice.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        System.out.println(body.getDevice().toString());
+        DBUtil.getInstance().updateDevice(body.getDevice());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

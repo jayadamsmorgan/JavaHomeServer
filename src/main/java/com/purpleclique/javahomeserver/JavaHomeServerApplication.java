@@ -4,7 +4,6 @@ import com.purpleclique.javahomeserver.threads.*;
 import com.purpleclique.javahomeserver.utils.DBUtil;
 import com.purpleclique.javahomeserver.utils.NetworkManager;
 import com.purpleclique.javahomeserver.utils.Properties;
-import com.purpleclique.javahomeserver.utils.SharedState;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
@@ -20,7 +19,7 @@ import java.net.UnknownHostException;
 @RequiredArgsConstructor
 public class JavaHomeServerApplication {
 
-	private static final String version = "0.69";
+	private static final String version = "0.7";
 
 	public static void main(String[] args) {
 
@@ -102,11 +101,11 @@ public class JavaHomeServerApplication {
 		System.out.println("Starting database...");
 		var db = DBUtil.getInstance();
 		System.out.print("Loading Devices... ");
-		SharedState.devices.addAll(db.getAllDevices());
-		if (SharedState.devices.isEmpty()) {
+		var devices = db.getAllDevices();
+		if (devices.isEmpty()) {
 			System.out.println("No devices available yet.");
 		} else {
-			System.out.println("Done. Device count: " + SharedState.devices.size() + ".");
+			System.out.println("Done. Device count: " + devices.size() + ".");
 		}
 	}
 
@@ -132,8 +131,8 @@ public class JavaHomeServerApplication {
 			packetReceiveThread.interrupt();
 			LoggingThread.log("Packet receive thread stopped. Waiting for queues to clear...");
 			// It's safe to exit if there is nothing in Signal queues.
-			while (!SharedState.deviceOutputSignals.isEmpty()
-					|| !SharedState.deviceInputSignals.isEmpty()) {
+			while (!DeviceOutputThread.deviceOutputSignals.isEmpty()
+					|| !DeviceInputThread.deviceInputSignals.isEmpty()) {
 				Thread.yield();
 			}
 			LoggingThread.log("Queues cleared. Shutdown completed.");

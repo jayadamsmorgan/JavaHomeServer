@@ -257,6 +257,17 @@ public class DBUtil {
         }
     }
 
+    public void deleteAllDevices() {
+        try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
+            Document query = new Document();
+            collection.deleteMany(query);
+        } catch (Exception e) {
+            LoggingThread.logError("Error deleting Device by id in the database: " + e.getMessage());
+        }
+    }
+
     public Optional<Device> findDeviceById(String id) {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
@@ -274,6 +285,25 @@ public class DBUtil {
             LoggingThread.logError("Error getting Device by id from database: " + e.getMessage());
         }
         return Optional.empty();
+    }
+
+    public Set<Device> getDevicesByLocation(String location) {
+        Set<Device> deviceSet = new HashSet<>();
+        try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
+            Document query = new Document("device", new Document("location", location));
+            MongoCursor<Document> cursor = collection.find(query).iterator();
+            while (cursor.hasNext()) {
+                String json = cursor.next().toJson();
+                ObjectMapper mapper = new ObjectMapper();
+                deviceSet.add(mapper.readValue(json, DeviceDTO.class).getDevice());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            LoggingThread.logError("Error getting Device by id from database: " + e.getMessage());
+        }
+        return deviceSet;
     }
 
     public Optional<Device> findDeviceByIpAddress(String ipAddress) {
@@ -302,6 +332,10 @@ public class DBUtil {
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             device.setId(ObjectId.get().toString());
+            var locations = getLocations();
+            if (!locations.contains(device.getLocation())) {
+                saveNewLocation(device.getLocation());
+            }
             DeviceDTO deviceDTO = DeviceDTO.builder()
                     .deviceType(device.getClass().getSimpleName())
                     .device(device)
@@ -323,6 +357,10 @@ public class DBUtil {
                     .deviceType(device.getClass().getSimpleName())
                     .device(device)
                     .build();
+            var locations = getLocations();
+            if (!locations.contains(device.getLocation())) {
+                saveNewLocation(device.getLocation());
+            }
             String json = writer.writeValueAsString(deviceDTO);
             Document query = new Document("device", new Document("id", device.getId()));
             collection.findOneAndReplace(query, Document.parse(json));
@@ -348,5 +386,44 @@ public class DBUtil {
         }
         return deviceSet;
     }
+
+    public void saveNewLocation(String location) {
+        try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(LOCATION_COLLECTION);
+            collection.insertOne(new Document("location", location));
+        } catch (Exception e) {
+            LoggingThread.logError("Error saving new Location in the database: " + e.getMessage());
+        }
+    }
+
+    public void deleteLocation(String location) {
+        try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(LOCATION_COLLECTION);
+            Document query = new Document("location", location);
+            collection.deleteOne(query);
+        } catch (Exception e) {
+            LoggingThread.logError("Error deleting Location in the database: " + e.getMessage());
+        }
+    }
+
+    public Set<String> getLocations() {
+        Set<String> locations = new HashSet<>();
+        try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(LOCATION_COLLECTION);
+            MongoCursor<Document> cursor = collection.find().iterator();
+            while (cursor.hasNext()) {
+                locations.add(cursor.next().getString("location"));
+            }
+            cursor.close();
+        } catch (Exception e) {
+            LoggingThread.logError("Error getting Locations from the database: " + e.getMessage());
+        }
+        return locations;
+    }
+
+
 
 }

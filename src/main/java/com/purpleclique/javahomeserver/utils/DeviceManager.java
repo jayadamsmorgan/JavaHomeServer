@@ -26,10 +26,12 @@ public class DeviceManager {
     }
 
     public void saveDevice(@NotNull Device device) {
-        if (SharedState.devices.contains(device)) {
-            DBUtil.getInstance().updateDevice(device);
+        var db = DBUtil.getInstance();
+        var deviceOpt = db.findDeviceById(device.getId());
+        if (deviceOpt.isPresent()) {
+            db.updateDevice(device);
         } else {
-            DBUtil.getInstance().saveNewDevice(device);
+            db.saveNewDevice(device);
         }
     }
 
