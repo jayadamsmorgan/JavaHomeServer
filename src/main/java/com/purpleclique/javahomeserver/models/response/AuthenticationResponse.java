@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class AuthenticationResponse {
 
     String token;
-    int userID;
+    String userID;
     String homeName;
     String error;
 

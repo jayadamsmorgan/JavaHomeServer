@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BasicDevice implements Device {
 
-    protected int id;
+    protected String id;
     protected String name;
     protected String ipAddress;
     protected String location;
@@ -18,7 +18,7 @@ public class BasicDevice implements Device {
         lock = new AtomicBoolean(false);
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -30,7 +30,7 @@ public class BasicDevice implements Device {
         this.location = location;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

@@ -9,6 +9,7 @@ import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.threads.LoggingThread;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -18,7 +19,7 @@ import java.util.Set;
 public class DBUtil {
 
     public static final String DATABASE_URL = "mongodb://127.0.0.1:27017";
-    private static final String DATABASE_NAME = "HomeServerDB";
+    private static final String DATABASE_NAME = "HomeServerDBTest2";
 
     public static final String DEVICE_COLLECTION = "devices";
     public static final String LOCATION_COLLECTION = "locations";
@@ -88,7 +89,7 @@ public class DBUtil {
         return userSet;
     }
 
-    public Optional<User> findUserById(int id) {
+    public Optional<User> findUserById(String id) {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(USER_COLLECTION);
@@ -125,6 +126,7 @@ public class DBUtil {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(USER_COLLECTION);
+            user.setId(ObjectId.get().toString());
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             String json = writer.writeValueAsString(user);
@@ -167,7 +169,7 @@ public class DBUtil {
         return Optional.empty();
     }
 
-    public Optional<Token> findTokenById(int id) {
+    public Optional<Token> findTokenById(String id) {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(TOKEN_COLLECTION);
@@ -223,6 +225,7 @@ public class DBUtil {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(TOKEN_COLLECTION);
+            token.setId(ObjectId.get().toString());
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             String json = writer.writeValueAsString(token);
@@ -232,7 +235,7 @@ public class DBUtil {
         }
     }
 
-    public void deleteAllValidTokensByPersonId(int userId) {
+    public void deleteAllValidTokensByPersonId(String userId) {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(TOKEN_COLLECTION);
@@ -243,7 +246,7 @@ public class DBUtil {
         }
     }
 
-    public void deleteDeviceById(int id) {
+    public void deleteDeviceById(String id) {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
@@ -254,7 +257,7 @@ public class DBUtil {
         }
     }
 
-    public Optional<Device> findDeviceById(int id) {
+    public Optional<Device> findDeviceById(String id) {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
@@ -298,6 +301,7 @@ public class DBUtil {
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+            device.setId(ObjectId.get().toString());
             DeviceDTO deviceDTO = DeviceDTO.builder()
                     .deviceType(device.getClass().getSimpleName())
                     .device(device)

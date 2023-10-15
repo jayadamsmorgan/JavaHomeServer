@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @RestController
@@ -38,7 +39,7 @@ public class UsersController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable int userId) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable String userId) {
         var userOptional = DBUtil.getInstance().findUserById(userId);
         if (userOptional.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -87,7 +88,7 @@ public class UsersController {
             targetUser.setPassword(passwordEncoder.encode(updateRequest.getNewPassword()));
             DBUtil.getInstance().updateUser(targetUser);
             return new ResponseEntity<>(HttpStatus.OK);
-        } else if (user.getId() != updateRequest.getUserId()) {
+        } else if (!Objects.equals(user.getId(), updateRequest.getUserId())) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         if (updateRequest.getUsername() != null && !updateRequest.getUsername().equals("")) {

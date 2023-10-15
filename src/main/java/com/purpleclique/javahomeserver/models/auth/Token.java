@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Token {
 
-    private int id;
+    private String id;
 
     private String token;
 
@@ -21,7 +21,7 @@ public class Token {
 
     private boolean expired;
 
-    private int tokenHolderId;
+    private String tokenHolderId;
 
     private String tokenType;
 

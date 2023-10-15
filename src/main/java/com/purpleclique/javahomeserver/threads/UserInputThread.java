@@ -389,8 +389,8 @@ public class UserInputThread implements Runnable {
             }
             if (cmd.hasOption("delete")) {
                 LoggingThread.log("Console: Deleting Device with ID '" + targetDevice.getId() + "' from Database.");
-                int deviceID = targetDevice.getId();
-                SharedState.devices.removeIf(device -> device.getId() == deviceID);
+                String deviceID = targetDevice.getId();
+                SharedState.devices.removeIf(device -> device.getId().equals(deviceID));
                 DBUtil.getInstance().deleteDeviceById(deviceID);
             }
             if (cmd.hasOption("f")) {
@@ -518,14 +518,8 @@ public class UserInputThread implements Runnable {
     }
 
     private @Nullable Device findDeviceById(String id) {
-        int intId;
-        try {
-            intId = Integer.parseInt(id);
-        } catch (NumberFormatException e) {
-            return null;
-        }
         for (Device device : SharedState.devices) {
-            if (device.getId() == intId) {
+            if (device.getId().equals(id)) {
                 return device;
             }
         }

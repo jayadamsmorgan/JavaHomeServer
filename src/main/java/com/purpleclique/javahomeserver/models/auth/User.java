@@ -20,7 +20,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class User implements UserDetails {
 
-    int id;
+    String id;
 
     UserType userType;
 

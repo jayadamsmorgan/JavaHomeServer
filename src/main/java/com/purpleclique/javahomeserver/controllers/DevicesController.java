@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @RestController
@@ -28,9 +29,9 @@ public class DevicesController {
     }
 
     @GetMapping("/{deviceId}")
-    public ResponseEntity<DeviceDTO> getDeviceById(@PathVariable int deviceId) {
+    public ResponseEntity<DeviceDTO> getDeviceById(@PathVariable String deviceId) {
         for (Device device : SharedState.devices) {
-            if (device.getId() == deviceId) {
+            if (Objects.equals(device.getId(), deviceId)) {
                 return ResponseEntity.ok(
                         DeviceDTO.builder()
                                 .device(device)
@@ -44,7 +45,7 @@ public class DevicesController {
 
     @PostMapping("/{deviceId}")
     public ResponseEntity<HttpStatus> updateDevice(
-            @PathVariable int deviceId, @RequestBody DeviceDTO body) {
+            @PathVariable String deviceId, @RequestBody DeviceDTO body) {
         if (body == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }

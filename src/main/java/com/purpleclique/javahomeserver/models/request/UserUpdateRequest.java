@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class UserUpdateRequest {
 
     String newPassword;
-    int userId;
+    String userId;
     User.UserType userType;
     String username;
 

@@ -2,13 +2,13 @@ package com.purpleclique.javahomeserver.models.devices;
 
 public interface Device {
 
-    int getId();
+    String getId();
 
     void setName(String name);
 
     void setLocation(String location);
 
-    void setId(int id);
+    void setId(String id);
 
     boolean isOn();
 
