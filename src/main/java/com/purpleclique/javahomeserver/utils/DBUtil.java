@@ -19,7 +19,7 @@ import java.util.Set;
 public class DBUtil {
 
     public static final String DATABASE_URL = "mongodb://127.0.0.1:27017";
-    private static final String DATABASE_NAME = "HomeServerDBTest2";
+    private static final String DATABASE_NAME = "HomeServerDB";
 
     public static final String DEVICE_COLLECTION = "devices";
     public static final String LOCATION_COLLECTION = "locations";
@@ -250,7 +250,7 @@ public class DBUtil {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
-            Document query = new Document("device", new Document("id", id));
+            Document query = new Document("device.id", id);
             collection.findOneAndDelete(query);
         } catch (Exception e) {
             LoggingThread.logError("Error deleting Device by id in the database: " + e.getMessage());
@@ -272,7 +272,7 @@ public class DBUtil {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
-            Document query = new Document("device", new Document("id", id));
+            Document query = new Document("device.id", id);
             MongoCursor<Document> cursor = collection.find(query).iterator();
             if (cursor.hasNext()) {
                 String json = cursor.next().toJson();
@@ -292,7 +292,7 @@ public class DBUtil {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
-            Document query = new Document("device", new Document("location", location));
+            Document query = new Document("device.location", location);
             MongoCursor<Document> cursor = collection.find(query).iterator();
             while (cursor.hasNext()) {
                 String json = cursor.next().toJson();
@@ -310,7 +310,7 @@ public class DBUtil {
         try (MongoClient mongoClient = MongoClients.create(DATABASE_URL)) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
             MongoCollection<Document> collection = database.getCollection(DEVICE_COLLECTION);
-            Document query = new Document("device", new Document("ipAddress", ipAddress));
+            Document query = new Document("device.ipAddress", ipAddress);
             MongoCursor<Document> cursor = collection.find(query).iterator();
             if (cursor.hasNext()) {
                 String json = cursor.next().toJson();
@@ -320,7 +320,7 @@ public class DBUtil {
             }
             cursor.close();
         } catch (Exception e) {
-            LoggingThread.logError("Error getting Device by id from database: " + e.getMessage());
+            LoggingThread.logError("Error getting Device by ipAddress from database: " + e.getMessage());
         }
         return Optional.empty();
     }
@@ -362,7 +362,7 @@ public class DBUtil {
                 saveNewLocation(device.getLocation());
             }
             String json = writer.writeValueAsString(deviceDTO);
-            Document query = new Document("device", new Document("id", device.getId()));
+            Document query = new Document("device.id", device.getId());
             collection.findOneAndReplace(query, Document.parse(json));
         } catch (Exception e) {
             LoggingThread.logError("Error saving new Device in the database: " + e.getMessage());
