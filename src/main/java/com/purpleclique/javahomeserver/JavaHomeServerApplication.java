@@ -2,6 +2,7 @@ package com.purpleclique.javahomeserver;
 
 import com.purpleclique.javahomeserver.threads.*;
 import com.purpleclique.javahomeserver.utils.DBUtil;
+import com.purpleclique.javahomeserver.utils.NetworkManager;
 import com.purpleclique.javahomeserver.utils.Properties;
 import com.purpleclique.javahomeserver.utils.SharedState;
 import lombok.NonNull;
@@ -9,6 +10,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import sun.misc.Signal;
+
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 @SpringBootApplication
 @RequiredArgsConstructor
@@ -28,7 +34,22 @@ public class JavaHomeServerApplication {
 
 		threadsInit();
 
-		LoggingThread.logWarning("Home server started at ");
+		String ip = null;
+		try (DatagramSocket socket = new DatagramSocket()) {
+			socket.connect(InetAddress.getByName("8.8.8.8"), 53);
+			ip = socket.getLocalAddress().getHostAddress();
+		} catch (SocketException | UnknownHostException ignored) { }
+
+		String logString = "JavaHomeServer started";
+
+		if (ip != null) {
+			logString += " at " + ip;
+		}
+
+		logString += ". UDP port: " + NetworkManager.PORT + ", Spring Boot port: 8080";
+
+		LoggingThread.logWarning(logString);
+
 	}
 
 
@@ -78,8 +99,10 @@ public class JavaHomeServerApplication {
 	}
 
 	private static void loadDevices() {
+		System.out.println("Starting database...");
+		var db = DBUtil.getInstance();
 		System.out.print("Loading Devices... ");
-		SharedState.devices.addAll(DBUtil.getInstance().loadDevices());
+		SharedState.devices.addAll(db.getAllDevices());
 		if (SharedState.devices.isEmpty()) {
 			System.out.println("No devices available yet.");
 		} else {

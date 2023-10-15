@@ -13,7 +13,6 @@ import java.util.Set;
 @AllArgsConstructor
 public class LocationDTO {
 
-    private int id;
     private String locationName;
     private Set<DeviceDTO> devices;
 

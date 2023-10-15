@@ -1,7 +1,7 @@
 package com.purpleclique.javahomeserver.models.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.purpleclique.javahomeserver.models.devices.BasicDevice;
+import com.purpleclique.javahomeserver.models.devices.Device;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 public class DeviceDTO {
 
     private String deviceType;
-    private BasicDevice device;
+    private Device device;
 
 }

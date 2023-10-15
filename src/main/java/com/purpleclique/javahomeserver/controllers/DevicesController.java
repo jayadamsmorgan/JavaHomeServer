@@ -1,6 +1,5 @@
 package com.purpleclique.javahomeserver.controllers;
 
-import com.purpleclique.javahomeserver.models.devices.BasicDevice;
 import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.utils.DBUtil;
@@ -22,7 +21,7 @@ public class DevicesController {
         for (Device device : SharedState.devices) {
             result.add(DeviceDTO.builder()
                             .deviceType(device.getClass().getSimpleName())
-                            .device((BasicDevice) device)
+                            .device(device)
                     .build());
         }
         return ResponseEntity.ok(result);
@@ -34,7 +33,7 @@ public class DevicesController {
             if (device.getId() == deviceId) {
                 return ResponseEntity.ok(
                         DeviceDTO.builder()
-                                .device((BasicDevice) device)
+                                .device(device)
                                 .deviceType(device.getClass().getSimpleName())
                         .build()
                 );
@@ -49,8 +48,8 @@ public class DevicesController {
         if (body == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        Device targetDevice = DBUtil.getInstance().findDeviceById(deviceId);
-        if (targetDevice == null) {
+        var targetDevice = DBUtil.getInstance().findDeviceById(deviceId);
+        if (targetDevice.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         System.out.println(body.getDevice().toString());

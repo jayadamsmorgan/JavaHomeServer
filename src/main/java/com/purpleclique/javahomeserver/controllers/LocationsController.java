@@ -1,6 +1,5 @@
 package com.purpleclique.javahomeserver.controllers;
 
-import com.purpleclique.javahomeserver.models.devices.BasicDevice;
 import com.purpleclique.javahomeserver.models.devices.Device;
 import com.purpleclique.javahomeserver.models.dto.DeviceDTO;
 import com.purpleclique.javahomeserver.models.dto.LocationDTO;
@@ -21,20 +20,33 @@ public class LocationsController {
 
     @GetMapping
     public ResponseEntity<Set<LocationDTO>> getLocations() {
-        Set<DeviceDTO> deviceDTOS = new HashSet<>();
-        for (Device device : SharedState.devices) {
-            deviceDTOS.add(DeviceDTO.builder()
-                            .deviceType(device.getClass().getSimpleName())
-                            .device((BasicDevice) device)
-                    .build());
-        }
-        LocationDTO locationDTO = LocationDTO.builder()
-                .id(1)
-                .locationName("testLocation")
-                .devices(deviceDTOS)
-                .build();
         Set<LocationDTO> locations = new HashSet<>();
-        locations.add(locationDTO);
+        // TODO: seems like not the best algorithm below... OK for now though
+        for (Device device : SharedState.devices) {
+            var location = locations.stream()
+                    .filter(locationDTO -> locationDTO.getLocationName().equals(device.getLocation())).findFirst();
+            if (location.isEmpty()) {
+                var deviceDTO = DeviceDTO.builder()
+                        .device(device)
+                        .deviceType(device.getClass().getSimpleName())
+                        .build();
+                Set<DeviceDTO> devices = new HashSet<>();
+                devices.add(deviceDTO);
+                var newLocation = LocationDTO.builder()
+                        .locationName(device.getLocation())
+                        .devices(devices)
+                        .build();
+                locations.add(newLocation);
+                continue;
+            }
+            var devices = location.get().getDevices();
+            var deviceDTO = DeviceDTO.builder()
+                    .device(device)
+                    .deviceType(device.getClass().getSimpleName())
+                    .build();
+            devices.add(deviceDTO);
+            location.get().setDevices(devices);
+        }
         return ResponseEntity.ok(locations);
     }
 

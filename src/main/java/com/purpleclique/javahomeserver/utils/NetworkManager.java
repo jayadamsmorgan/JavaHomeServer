@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 
 public class NetworkManager {
 
-    private static final int PORT = 5051;
+    public static final int PORT = 5051;
     public static final int RECEIVE_PACKET_MAX_LENGTH = 1024;
 
     private static NetworkManager instance;

@@ -296,7 +296,8 @@ public class UserInputThread implements Runnable {
                     return;
                 }
                 DeviceManager.getInstance().saveDevice(device);
-                device = DBUtil.getInstance().findDeviceByIpAddress(ip);
+                // TODO: double check
+                device = DBUtil.getInstance().findDeviceByIpAddress(ip).orElseThrow();
                 SharedState.devices.add(device);
                 LoggingThread.log("Console: Added new Device to the Database: " + device);
                 return;

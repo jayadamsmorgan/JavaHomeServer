@@ -36,5 +36,4 @@ public class AuthenticationController {
         var response = authenticationService.authenticate(request);
         return ResponseEntity.ok(response);
     }
-
 }
